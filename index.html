@@ -1,0 +1,335 @@
+<html>
+
+<head>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+		integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js"
+		integrity="sha256-KzZiKy0DWYsnwMF+X1DvQngQ2/FxF7MF3Ff72XcpuPs=" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css"
+		integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
+	<script language="JavaScript" src="${pluginsBaseRootUrl}/web.shared/jquery.min.js"></script>
+	<script src="${pluginsBaseRootUrl}/web.shared/jquery.class.js" type="text/javascript"></script>
+	<script src="${pluginsBaseRootUrl}/web.shared/elvis_api/js/jquery.elvis.js" type="text/javascript"></script>
+	<script language="JavaScript">
+		const elvisApi = new ElvisAPI('${serverUrl}');
+		let timer, elvisContext, version, filePath = "saved-links.json", saved_links;
+
+		const init = _ => {
+			elvisContext = ElvisPlugin.resolveElvisContext();
+			timer = new Timer($('#time'), refresh);
+			load();
+		}
+
+		const refresh = _ => {
+			const old = window.parent.location.hash;
+			console.log(old);
+			window.parent.location.hash = "#";
+			window.parent.location.hash = old;
+		};
+
+		class Timer {
+			constructor($el, callback) {
+				this.time;
+				this.interval;
+				this.paused = false;
+				this.$el = $el;
+				this.callback = callback;
+			}
+
+			start = _ => {
+				this.stop();
+				this.interval = setInterval(() => {
+					if (!this.paused) {
+						this.time--;
+						if (this.time < 1) clearInterval(this.interval), this.callback();
+						this.$el.val(this.time);
+					}
+				}, 1000);
+				console.log("Started interval", this.time);
+			}
+
+			pause = _ => this.paused = true;
+
+			stop = _ => clearInterval(this.interval);
+
+			increment = _ => { this.time++; this.$el.val(parseInt(this.time)); }
+
+			decrement = _ => { this.time--; this.$el.val(parseInt(this.time)); }
+
+			setTime = time => {
+				if (!this.paused) this.paused = false;
+				this.time = parseInt(time);
+				this.start();
+				console.log("Set time to", this.time);
+			}
+		}
+
+		const load = _ => {
+			$(".loading").show();
+			if (!filePath) return;
+			elvisApi.csrf(data => {
+				$.ajax({
+					url: `${serverUrl}/private-api/system/config/file/${btoa(filePath)}`,
+					method: "GET",
+					headers: {
+						'X-CSRF-TOKEN': data.csrfToken
+					},
+					timeout: 0
+				}).done(function (response) {
+					$(".loading").hide();
+					version = response.version;
+					$("tbody").empty();
+					saved_links = JSON.parse(response.content);
+					Object.values(saved_links[elvisContext.app.userProfile.username]).forEach(link => {
+						$("tbody").append(`
+							<tr>
+								<th scope="row"><a onclick="deleteRoute('${link.name}')"><i class="fa fa-trash-alt red"></i></a></th>
+								<td>${link.name}</td>
+								<td class="text-truncate"><a onclick="setUrl('${link.url}')">${link.url}</a></td>
+							</tr>
+						`);
+					});
+				}).fail((jqXHR, textStatus) => {
+					if (jqXHR.status == 400) textStatus = `File ${filePath} could not be found`
+					alert(textStatus.toString());
+					$(".loading").hide();
+				});
+			});
+		}
+
+		const save = _ => {
+			$(".loading").show();
+			elvisApi.csrf(function (data) {
+				$.ajax({
+					url: `${serverUrl}/private-api/system/config/file/${btoa(filePath)}`,
+					method: "PUT",
+					timeout: 0,
+					headers: {
+						'X-CSRF-TOKEN': data.csrfToken,
+						'Content-Type': "application/json"
+					},
+					data: JSON.stringify({
+						content: JSON.stringify(saved_links),
+						version: version++,
+						headers: {},
+						id: btoa(filePath),
+						path: filePath
+					})
+				}).done(function (response) {
+					load();
+				});
+			});
+		}
+
+		const saveRoute = _ => {
+			let name = prompt("Save this search as", "<my search>")
+			if (saved_links[elvisContext.app.userProfile.username][name]) return saveRoute()
+			else saved_links[elvisContext.app.userProfile.username][name] = {
+				name: name,
+				url: window.parent.location.href
+			}
+			save();
+		}
+
+		const deleteRoute = name => {
+			if (!saved_links[elvisContext.app.userProfile.username][name]) return
+			else delete saved_links[elvisContext.app.userProfile.username][name]
+			save();
+		}
+
+		const setUrl = url => window.parent.location.href = url;
+
+		$(init);
+	</script>
+	<style type="text/css">
+		@import url('https://fonts.googleapis.com/css?family=Lato:300,400,700');
+
+		* {
+			box-sizing: border-box;
+			-webkit-font-smoothing: antialiased;
+			font-weight: 400;
+			font-family: Lato, sans-serif !important;
+			outline: none !important;
+		}
+
+		html,
+		body {
+			height: 100%;
+			width: 100%;
+			padding: 0;
+			margin: 0px;
+		}
+
+		h2 {
+			color: #009ee3;
+			font-size: 16px;
+			font-weight: 700;
+			border: none;
+			border-bottom: 1px solid #e5e9ea;
+			padding: 1px 5px;
+			margin-top: 0;
+			margin-bottom: 5px;
+			width: 100vw;
+		}
+
+		hr {
+			border: none;
+			border-bottom: 1px solid #e5e9ea;
+		}
+
+		a {
+			display: block;
+			color: #009ee3 !important;
+			text-decoration: underline !important;
+			cursor: pointer;
+		}
+
+		.container {
+			padding: 5px 10px;
+		}
+
+		#time {
+			color: black;
+			border: none;
+			font-size: 15vw;
+			background-color: transparent;
+			width: 100px;
+			text-align: center;
+			/* height: 100px; */
+			top: 10px;
+		}
+
+		.formcontrol {
+			font-size: 10vw;
+			background: none;
+			border: none;
+			margin-top: -10px;
+		}
+
+		.formcontrol:active {
+			color: rgba(0, 0, 0, 0.5);
+		}
+
+		/* .form {
+			height: 100px;
+			background-color: yellow;
+		} */
+
+		input::-webkit-outer-spin-button,
+		input::-webkit-inner-spin-button,
+		input[type=number] {
+			-webkit-appearance: none;
+			margin: 0;
+			-moz-appearance: textfield;
+		}
+
+		.btn {
+			width: 40px;
+			height: 40px;
+			/* border: 2px #009ee3 solid; */
+		}
+
+		.red {
+			color: #ff3232;
+		}
+
+		.green {
+			color: #40bb40;
+		}
+
+		.table {
+			table-layout: fixed;
+		}
+
+		.overlay {
+			position: fixed;
+			top: 140px;
+			left: 0;
+			height: calc(100vh - 140px);
+			width: 100vw;
+			background-color: #333;
+			opacity: .4;
+			z-index: 100;
+		}
+
+		.loader {
+			z-index: 101;
+			position: absolute;
+			top: calc(50vh + 70px - 22px);
+			left: calc(50vw - 22px);
+			width: 50px;
+			height: 50px;
+			background-color: #009ee3;
+		}
+
+		.square {
+			border: 3px solid #fff;
+			width: 20px;
+			height: 20px;
+			position: absolute;
+			top: 15px;
+			left: 15px;
+			-webkit-animation: spin 1s linear infinite;
+			animation: spin 1s linear infinite;
+		}
+
+		@-webkit-keyframes spin {
+			0% {
+				-webkit-transform: rotate(0deg);
+			}
+
+			100% {
+				-webkit-transform: rotate(360deg);
+			}
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div class="loading">
+		<div class="loader">
+			<div class="square"></div>
+		</div>
+		<div class="overlay"></div>
+	</div>
+	<div class="elvisContext">
+		<!-- <h2>Personal Search Panel</h2> -->
+		<center>
+			<div class="form">
+				<button class="formcontrol" style="margin-right: -15px;" onclick="timer.increment()">+</button>
+				<input name="time" type="number" id="time" value="60"></input>
+				<button class="formcontrol" style="margin-left: -13px;" onclick="timer.decrement()">-</button>
+			</div>
+			<button onclick="timer.setTime($('#time').val())" class="btn"><i class="fa fa-play"></i></button>
+			<button onclick="timer.pause()" class="btn"><i class="fa fa-pause"></i></button>
+			<button onclick="timer.stop()" class="btn"><i class="fa fa-stop"></i></button>
+		</center>
+		<div class="container">
+			<table class="table">
+				<thead>
+					<th scope="col" style="
+					width: 10px;
+				"><a onclick="saveRoute()"><i class="fas fa-save green"></i></a></th>
+					<th scope="col" style="
+					width: 100px;
+				">Name</th>
+					<th scope="col">URL</th>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</body>
+
+</html>
