@@ -25,6 +25,7 @@
 			console.log(old);
 			window.parent.location.hash = "#";
 			window.parent.location.hash = old;
+			timer.setTime(timer.initial);
 		};
 
 		class Timer {
@@ -34,6 +35,7 @@
 				this.paused = false;
 				this.$el = $el;
 				this.callback = callback;
+				this.initial = 5;
 			}
 
 			start = _ => {
@@ -59,6 +61,7 @@
 			setTime = time => {
 				if (!this.paused) this.paused = false;
 				this.time = parseInt(time);
+				this.initial = this.time;
 				this.start();
 				console.log("Set time to", this.time);
 			}
