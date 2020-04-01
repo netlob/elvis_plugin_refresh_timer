@@ -125,7 +125,7 @@
 		}
 
 		const saveRoute = _ => {
-			let name = prompt("Save this search as", "my search term")
+			let name = prompt("Save this search as", "my search")
 			if (saved_links[elvisContext.app.userProfile.username][name]) return saveRoute()
 			else saved_links[elvisContext.app.userProfile.username][name] = {
 				name: name,
