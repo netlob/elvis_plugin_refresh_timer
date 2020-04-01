@@ -103,24 +103,24 @@
 		const save = _ => {
 			$(".loading").show();
 			elvisApi.csrf(function (data) {
-				$.ajax({
-					url: `${serverUrl}/private-api/system/config/file/${btoa(filePath)}`,
+				console.log("im here", version)
+				fetch(`${serverUrl}/private-api/system/config/file/${btoa(filePath)}`, {
 					method: "PUT",
-					timeout: 0,
 					headers: {
 						'X-CSRF-TOKEN': data.csrfToken,
 						'Content-Type': "application/json"
 					},
-					data: JSON.stringify({
+					body: JSON.stringify({
 						content: JSON.stringify(saved_links),
 						version: version++,
 						headers: {},
 						id: btoa(filePath),
 						path: filePath
 					})
-				}).done(function (response) {
+				}).then(res => res.json()).then(response => {
+					console.log(response)
 					load();
-				});
+				})
 			});
 		}
 
@@ -314,7 +314,7 @@
 				<button class="formcontrol" style="margin-left: -13px;" onclick="timer.decrement()">-</button>
 			</div>
 			<button onclick="timer.setTime($('#time').val())" class="btn"><i class="fa fa-play"></i></button>
-<!-- 			<button onclick="timer.pause()" class="btn"><i class="fa fa-pause"></i></button> -->
+			<!-- 			<button onclick="timer.pause()" class="btn"><i class="fa fa-pause"></i></button> -->
 			<button onclick="timer.stop()" class="btn"><i class="fa fa-stop"></i></button>
 		</center>
 		<div class="container">
