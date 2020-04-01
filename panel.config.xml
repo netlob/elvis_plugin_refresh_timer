@@ -21,8 +21,8 @@
 
 		<messages>
 			<entries locale="en_US">
-				<entry key="title">Refresh Timer</entry>
-				<entry key="button.tooltip">Refresh Query Timer</entry>
+				<entry key="title">Personal Searches</entry>
+				<entry key="button.tooltip">Save searches and refresh searches periodically</entry>
 			</entries>
 		</messages>
 
