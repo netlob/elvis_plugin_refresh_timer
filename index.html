@@ -88,7 +88,7 @@
 							<tr>
 								<th scope="row"><a onclick="deleteRoute('${link.name}')"><i class="fa fa-trash-alt red"></i></a></th>
 								<td>${link.name}</td>
-								<td class="text-truncate"><a onclick="setUrl('${link.url}')">${link.url}</a></td>
+								<td class="text-truncate"><a onclick="setUrl('${link.url}')">${link.url.substr(link.url.indexOf("#"))}</a></td>
 							</tr>
 						`);
 					});
