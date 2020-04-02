@@ -83,6 +83,7 @@
 					version = response.version;
 					$("tbody").empty();
 					saved_links = JSON.parse(response.content);
+					if (!(elvisContext.app.userProfile.username in saved_links)) saved_links[elvisContext.app.userProfile.username] = {};
 					Object.values(saved_links[elvisContext.app.userProfile.username]).forEach(link => {
 						$("tbody").append(`
 							<tr>
