@@ -3,6 +3,8 @@
 ## Installation
 - Download or clone this plugin
 - Place it inside the `plugins/active` folder
+- Create a file calles `saved-links.json` inside de main config folder of Elvis, with content:
+    ```{}```
 - Scan your elvis for new plugins
  - Go to the elvis management console
  - Go to panel plugins
