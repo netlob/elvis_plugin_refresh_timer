@@ -14,15 +14,14 @@
 		const elvisApi = new ElvisAPI('${serverUrl}');
 		let timer, elvisContext, version, filePath = "saved-links.json", saved_links;
 
-		const init = _ => {
+		function init() {
 			elvisContext = ElvisPlugin.resolveElvisContext();
 			timer = new Timer($('#time'), refresh);
 			load();
 		}
 
-		const refresh = _ => {
+		function refresh() {
 			const old = window.parent.location.hash;
-			console.log(old);
 			window.parent.location.hash = "#";
 			window.parent.location.hash = old;
 			timer.setTime(timer.initial);
@@ -38,9 +37,9 @@
 				this.initial = 5;
 			}
 
-			start = _ => {
+			start() {
 				this.stop();
-				this.interval = setInterval(() => {
+				this.interval = setInterval(function () {
 					if (!this.paused) {
 						this.time--;
 						if (this.time < 1) clearInterval(this.interval), this.callback();
@@ -50,15 +49,15 @@
 				console.log("Started interval", this.time);
 			}
 
-			pause = _ => this.paused = true;
+			pause() { this.paused = true; }
 
-			stop = _ => clearInterval(this.interval);
+			stop() { clearInterval(this.interval); }
 
-			increment = _ => { this.time++; this.$el.val(parseInt(this.time)); }
+			increment() { this.time++; this.$el.val(parseInt(this.time)); }
 
-			decrement = _ => { this.time--; this.$el.val(parseInt(this.time)); }
+			decrement() { this.time--; this.$el.val(parseInt(this.time)); }
 
-			setTime = time => {
+			setTime(time) {
 				if (!this.paused) this.paused = false;
 				this.time = parseInt(time);
 				this.initial = this.time;
@@ -67,65 +66,69 @@
 			}
 		}
 
-		const load = _ => {
+		async function load() {
 			$(".loading").show();
-			if (!filePath) return;
-			elvisApi.csrf(data => {
-				$.ajax({
-					url: `${serverUrl}/private-api/system/config/file/${btoa(filePath)}`,
-					method: "GET",
-					headers: {
-						'X-CSRF-TOKEN': data.csrfToken
-					},
-					timeout: 0
-				}).done(function (response) {
-					$(".loading").hide();
-					version = response.version;
-					$("tbody").empty();
-					saved_links = JSON.parse(response.content);
-					if (!(elvisContext.app.userProfile.username in saved_links)) saved_links[elvisContext.app.userProfile.username] = {};
-					Object.values(saved_links[elvisContext.app.userProfile.username]).forEach(link => {
-						$("tbody").append(`
+			// if (!filePath) return;
+			// elvisApi.csrf(data => {
+			// 	$.ajax({
+			// 		url: `${serverUrl}/private-api/system/config/file/${btoa(filePath)}`,
+			// 		method: "GET",
+			// 		headers: {
+			// 			'X-CSRF-TOKEN': data.csrfToken
+			// 		},
+			// 		timeout: 0
+			// 	}).done(function (response) {
+			// 		version = response.version;
+			$("tbody").empty();
+			// 		saved_links = JSON.parse(response.content);
+			saved_links = JSON.parse(await localStorage.getItem("saved_links")) || {};
+			if (!(elvisContext.app.userProfile.username in saved_links)) saved_links[elvisContext.app.userProfile.username] = {};
+			Object.values(saved_links[elvisContext.app.userProfile.username]).forEach(link => {
+				$("tbody").append(`
 							<tr>
 								<th scope="row"><a onclick="deleteRoute('${link.name}')"><i class="fa fa-trash-alt red"></i></a></th>
 								<td>${link.name}</td>
 								<td class="text-truncate"><a onclick="setUrl('${link.url}')">${link.url.substr(link.url.indexOf("#"))}</a></td>
 							</tr>
 						`);
-					});
-				}).fail((jqXHR, textStatus) => {
-					if (jqXHR.status == 400) textStatus = `File ${filePath} could not be found`
-					alert(textStatus.toString());
-					$(".loading").hide();
-				});
 			});
+			$(".loading").hide();
+			// 	}).fail((jqXHR, textStatus) => {
+			// 		if (jqXHR.status == 400) textStatus = `File ${filePath} could not be found`
+			// 		alert(textStatus.toString());
+			// 		$(".loading").hide();
+			// 	});
+			// });
 		}
 
-		const save = _ => {
+		async function save() {
 			$(".loading").show();
-			elvisApi.csrf(function (data) {
-				console.log("im here", version)
-				fetch(`${serverUrl}/private-api/system/config/file/${btoa(filePath)}`, {
-					method: "PUT",
-					headers: {
-						'X-CSRF-TOKEN': data.csrfToken,
-						'Content-Type': "application/json"
-					},
-					body: JSON.stringify({
-						content: JSON.stringify(saved_links),
-						version: version++,
-						headers: {},
-						id: btoa(filePath),
-						path: filePath
-					})
-				}).then(res => res.json()).then(response => {
-					console.log(response)
-					load();
-				})
-			});
+			// elvisApi.csrf(function (data) {
+			// 	console.log("im here", version)
+			// 	fetch(`${serverUrl}/private-api/system/config/file/${btoa(filePath)}`, {
+			// 		method: "PUT",
+			// 		headers: {
+			// 			'X-CSRF-TOKEN': data.csrfToken,
+			// 			'Content-Type': "application/json"
+			// 		},
+			// 		body: JSON.stringify({
+			// 			content: JSON.stringify(saved_links),
+			// 			version: version++,
+			// 			headers: {},
+			// 			id: btoa(filePath),
+			// 			path: filePath
+			// 		})
+			// 	}).then(res => res.json()).then(response => {
+			// 		console.log(response)
+			// 		load();
+			// 	})
+			// });
+			await localStorage.setItem("saved_links", JSON.stringify(saved_links));
+			load();
+			$(".loading").hide();
 		}
 
-		const saveRoute = _ => {
+		function saveRoute() {
 			let name = prompt("Save this search as", "my search")
 			if (saved_links[elvisContext.app.userProfile.username][name]) return saveRoute()
 			else saved_links[elvisContext.app.userProfile.username][name] = {
@@ -135,13 +138,13 @@
 			save();
 		}
 
-		const deleteRoute = name => {
+		function deleteRoute(name) {
 			if (!saved_links[elvisContext.app.userProfile.username][name]) return
 			else delete saved_links[elvisContext.app.userProfile.username][name]
 			save();
 		}
 
-		const setUrl = url => window.parent.location.href = url;
+		function setUrl(url) { window.parent.location.href = url; }
 
 		$(init);
 	</script>
@@ -248,9 +251,9 @@
 
 		.overlay {
 			position: fixed;
-			top: 140px;
+			top: 100px;
 			left: 0;
-			height: calc(100vh - 140px);
+			height: calc(100vh - 100px);
 			width: 100vw;
 			background-color: #333;
 			opacity: .4;
@@ -311,9 +314,9 @@
 		<!-- <h2>Personal Search Panel</h2> -->
 		<center>
 			<div class="form">
-				<button class="formcontrol" style="margin-right: -15px;" onclick="timer.increment()">+</button>
+				<!-- <button class="formcontrol" style="margin-right: -15px;" onclick="timer.increment()">+</button> -->
 				<input name="time" type="number" id="time" value="60"></input>
-				<button class="formcontrol" style="margin-left: -13px;" onclick="timer.decrement()">-</button>
+				<!-- <button class="formcontrol" style="margin-left: -13px;" onclick="timer.decrement()">-</button> -->
 			</div>
 			<button onclick="timer.setTime($('#time').val())" class="btn"><i class="fa fa-play"></i></button>
 			<!-- 			<button onclick="timer.pause()" class="btn"><i class="fa fa-pause"></i></button> -->
