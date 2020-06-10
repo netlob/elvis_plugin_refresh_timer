@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <plugin>
 	<info>
 		<version>
-			<pluginVersion>1.1</pluginVersion>
+			<pluginVersion>1.4</pluginVersion>
 			<requiresAtLeast>6.1.0.0</requiresAtLeast>
 		</version>
 		<description>Refresh query plugin</description>
@@ -10,14 +10,14 @@
 	</info>
 	<panel>
 		<url>${pluginUrl}/index.html</url>
-		
+
 		<iconUrl>${pluginUrl}/icon.svg</iconUrl>
 
 		<panelLocations>
-			<panelLocation id="mainRightPanel" order="100"/>
+			<panelLocation id="mainRightPanel" order="100" />
 		</panelLocations>
 
-		<requiredRoles/>
+		<requiredRoles />
 
 		<messages>
 			<entries locale="en_US">
