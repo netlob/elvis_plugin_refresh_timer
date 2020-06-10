@@ -120,6 +120,7 @@
 		}
 
 		function setUrl(url) { 
+			window.parent.location.href = url;
 			setTimeout(function() {
 				window.parent.location.href = url;
 			}, 100)
